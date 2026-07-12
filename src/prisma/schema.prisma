@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Camp {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  description String?
+
+  logo        String?
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  teams       Team[]
+  activities  Activity[]
+
+  @@index([slug])
+}
+
+model Team {
+  id            String   @id @default(cuid())
+
+  campId        String
+
+  name          String
+
+  color         String
+
+  displayOrder  Int      @default(0)
+
+  active        Boolean  @default(true)
+
+  createdAt     DateTime @default(now())
+
+  camp          Camp     @relation(fields: [campId], references: [id], onDelete: Cascade)
+
+  scores        ActivityScore[]
+
+  @@index([campId])
+
+  @@index([displayOrder])
+
+  @@unique([campId, name])
+}
+
+model Activity {
+  id          String   @id @default(cuid())
+
+  campId      String
+
+  name        String
+
+  description String?
+
+  createdAt   DateTime @default(now())
+
+  camp         Camp     @relation(fields: [campId], references: [id], onDelete: Cascade)
+
+  scores       ActivityScore[]
+
+  @@index([campId])
+
+  @@index([createdAt])
+}
+
+model ActivityScore {
+  id           String   @id @default(cuid())
+
+  activityId   String
+
+  teamId       String
+
+  points       Int      @default(0)
+
+  activity     Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  team         Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([activityId, teamId])
+
+  @@index([teamId])
+
+  @@index([activityId])
+}

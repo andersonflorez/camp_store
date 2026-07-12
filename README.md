@@ -55,7 +55,7 @@ Abre `http://localhost:3000`.
 
 ## Turso para producción (Vercel)
 
-Este proyecto usa Prisma con datasource SQLite. Para usar Turso en producción, utiliza Turso como SQLite remota (libsql).
+Este proyecto usa Prisma con datasource SQLite y en runtime se conecta a Turso usando el adaptador oficial de libsql.
 
 ### 1) Crear la base en Turso
 
@@ -76,21 +76,38 @@ Guarda estos valores:
 
 En el proyecto de Vercel, agrega:
 
-- `DATABASE_URL` = URL de Turso (`libsql://...`)
+- `DATABASE_URL` = `file:./dev.db`
+- `TURSO_DATABASE_URL` = URL de Turso (`libsql://...`)
 - `TURSO_AUTH_TOKEN` = token generado
 - `NODE_ENV` = `production`
 
-### 3) Aplicar migraciones a producción
+`DATABASE_URL` debe seguir siendo `file:` para que Prisma CLI (generate/build) no falle con provider `sqlite`.
 
-Antes del primer deploy (y cada cambio de schema), ejecuta:
+### 3) Build command en Vercel
+
+Usa este Build Command:
 
 ```bash
-DATABASE_URL="libsql://camp-score-prod-<org>.turso.io" \
-TURSO_AUTH_TOKEN="<token>" \
-npx prisma migrate deploy
+npm run build
 ```
 
-### 4) Desplegar en Vercel
+No uses `prisma migrate deploy` dentro del build de Vercel con `libsql://...` porque fallará la validación del schema.
+
+### 4) Aplicar cambios de schema en Turso
+
+Cuando cambie `prisma/schema.prisma`, genera el SQL de migración con Prisma y aplícalo con Turso CLI.
+
+Ejemplo de flujo:
+
+```bash
+# 1) Crear migración local (genera SQL en prisma/migrations)
+npm run prisma:migrate
+
+# 2) Aplicar ese SQL en Turso (ejemplo)
+turso db shell camp-score-prod < prisma/migrations/<migration_folder>/migration.sql
+```
+
+### 5) Desplegar en Vercel
 
 Conecta el repositorio en Vercel y realiza el deploy.
 
@@ -102,15 +119,18 @@ npm run build
 
 ## Nota importante para Prisma + Turso
 
-Si Turso no conecta con `PrismaClient` directo en tu entorno, usa el adaptador oficial de Prisma para libsql.
+La conexión a Turso en producción queda lista mediante:
+
+- `@prisma/adapter-libsql`
+- `@libsql/client`
+
+Implementado en `src/lib/prisma.ts`.
 
 Dependencias necesarias:
 
 ```bash
 npm install @prisma/adapter-libsql @libsql/client
 ```
-
-Y luego adapta la inicialización de Prisma en `src/lib/prisma.ts` según la guía oficial de Prisma para Turso/libsql.
 
 ## Comandos útiles
 

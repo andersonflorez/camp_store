@@ -12,19 +12,7 @@ export const campSchema = z.object({
     .trim()
     .min(3)
     .max(100)
-    .regex(/^[a-z0-9-]+$/),
-
-  description: z
-    .string()
-    .max(500)
-    .optional()
-    .or(z.literal("")),
-
-  logo: z
-    .string()
-    .url()
-    .optional()
-    .or(z.literal(""))
+    .regex(/^[a-z0-9-]+$/, "Usa solo letras minúsculas, números y guiones"),
 });
 
 export type CampForm = z.infer<typeof campSchema>;

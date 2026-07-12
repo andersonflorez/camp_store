@@ -14,33 +14,71 @@ interface CreateActivityInput {
   scores: TeamScore[];
 }
 
-export async function createActivity(data: CreateActivityInput) {
-  if (!data.name.trim()) {
-    throw new Error("El nombre de la actividad es obligatorio.");
-  }
-
-  if (data.scores.length === 0) {
-    throw new Error("Debe existir al menos un equipo.");
-  }
-
-  const activity = await prisma.activity.create({
-    data: {
-      campId: data.campId,
-      name: data.name.trim(),
+async function revalidateCampViews(campId: string) {
+  const camp = await prisma.camp.findUnique({
+    where: {
+      id: campId,
+    },
+    select: {
+      slug: true,
     },
   });
 
-  await prisma.activityScore.createMany({
-    data: data.scores.map((score) => ({
-      activityId: activity.id,
-      teamId: score.teamId,
-      points: Number(score.points) || 0,
-    })),
+  revalidatePath(`/dashboard/camp/${campId}`);
+  revalidatePath(`/dashboard/camp/${campId}/activities`);
+  revalidatePath(`/dashboard/camp/${campId}/ranking`);
+
+  if (camp) {
+    revalidatePath(`/public/${camp.slug}`);
+  }
+}
+
+export async function createActivity(data: CreateActivityInput) {
+  const name = data.name.trim();
+
+  if (!name) {
+    throw new Error("El nombre de la actividad es obligatorio.");
+  }
+
+  const teams = await prisma.team.findMany({
+    where: {
+      campId: data.campId,
+      active: true,
+    },
+    select: {
+      id: true,
+    },
+    orderBy: {
+      displayOrder: "asc",
+    },
   });
 
-  revalidatePath(`/camp/${data.campId}`);
-  revalidatePath(`/camp/${data.campId}/activities`);
-  revalidatePath(`/camp/${data.campId}/ranking`);
+  if (teams.length === 0) {
+    throw new Error("Debe existir al menos un equipo activo.");
+  }
+
+  const pointsByTeamId = new Map(
+    data.scores.map((score) => [score.teamId, Number(score.points) || 0])
+  );
+
+  await prisma.$transaction(async (tx) => {
+    const activity = await tx.activity.create({
+      data: {
+        campId: data.campId,
+        name,
+      },
+    });
+
+    await tx.activityScore.createMany({
+      data: teams.map((team) => ({
+        activityId: activity.id,
+        teamId: team.id,
+        points: pointsByTeamId.get(team.id) ?? 0,
+      })),
+    });
+  });
+
+  await revalidateCampViews(data.campId);
 }
 
 export async function deleteActivity(id: string, campId: string) {
@@ -50,9 +88,7 @@ export async function deleteActivity(id: string, campId: string) {
     },
   });
 
-  revalidatePath(`/camp/${campId}`);
-  revalidatePath(`/camp/${campId}/activities`);
-  revalidatePath(`/camp/${campId}/ranking`);
+  await revalidateCampViews(campId);
 }
 
 export async function getActivities(campId: string) {
@@ -64,6 +100,11 @@ export async function getActivities(campId: string) {
       scores: {
         include: {
           team: true,
+        },
+        orderBy: {
+          team: {
+            displayOrder: "asc",
+          },
         },
       },
     },

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getActivities } from "@/actions/activities";
+import { getTeams } from "@/actions/teams";
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -9,9 +9,9 @@ export async function GET(request: Request) {
         return NextResponse.json({ message: "campId es obligatorio." }, { status: 400 });
     }
 
-    const activities = await getActivities(campId);
+    const teams = await getTeams(campId);
 
-    return NextResponse.json(activities, {
+    return NextResponse.json(teams, {
         status: 200,
         headers: {
             "Cache-Control": "no-store",

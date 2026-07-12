@@ -14,7 +14,6 @@ async function main() {
     data: {
       name: "Campamento Jóvenes 2027",
       slug: "campamento-jovenes-2027",
-      description: "Campamento de ejemplo generado automáticamente.",
     },
   });
 
@@ -65,27 +64,22 @@ async function main() {
   const activities = [
     {
       name: "Carrera de Relevos",
-      description: "Competencia física",
       points: [100, 80, 60, 40, 20],
     },
     {
       name: "Trivia Bíblica",
-      description: "Preguntas y respuestas",
       points: [40, 100, 80, 60, 20],
     },
     {
       name: "Construcción",
-      description: "Trabajo en equipo",
       points: [20, 40, 100, 80, 60],
     },
     {
       name: "Búsqueda del Tesoro",
-      description: "Exploración",
       points: [80, 20, 40, 100, 60],
     },
     {
       name: "Penalización",
-      description: "Descuento por incumplimiento",
       points: [0, -20, 0, 0, -10],
     },
   ];
@@ -95,7 +89,6 @@ async function main() {
       data: {
         campId: camp.id,
         name: activityData.name,
-        description: activityData.description,
       },
     });
 

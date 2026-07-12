@@ -20,6 +20,7 @@ export default function ActivityForm({
 }: ActivityFormProps) {
     const [name, setName] = useState("");
     const [scores, setScores] = useState<Record<string, string>>({});
+    const [error, setError] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
 
     function updateScore(teamId: string, value: string) {
@@ -31,19 +32,29 @@ export default function ActivityForm({
 
     function onSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
+        setError(null);
 
         startTransition(async () => {
-            await createActivity({
-                campId,
-                name,
-                scores: teams.map((team) => ({
-                    teamId: team.id,
-                    points: Number(scores[team.id] ?? ""),
-                })),
-            });
+            try {
+                await createActivity({
+                    campId,
+                    name,
+                    scores: teams.map((team) => ({
+                        teamId: team.id,
+                        points: Number(scores[team.id] ?? ""),
+                    })),
+                });
 
-            setName("");
-            setScores({});
+                setName("");
+                setScores({});
+            } catch (cause) {
+                const message =
+                    cause instanceof Error
+                        ? cause.message
+                        : "No se pudo crear la actividad.";
+
+                setError(message);
+            }
         });
     }
 
@@ -98,6 +109,12 @@ export default function ActivityForm({
                     </div>
                 ))}
             </div>
+
+            {error && (
+                <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                    {error}
+                </p>
+            )}
 
             <button
                 type="submit"

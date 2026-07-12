@@ -63,9 +63,6 @@ export default function PublicRanking({
         <main className="min-h-screen bg-slate-950 px-6 py-10 text-slate-100">
             <div className="mx-auto max-w-6xl">
                 <h1 className="text-center text-4xl font-semibold tracking-tight md:text-5xl">{campName}</h1>
-                <p className="mt-3 text-center text-xs text-slate-400 md:text-sm">
-                    Actualiza automaticamente cada 2 segundos · Ultima actualizacion: {lastUpdate.toLocaleTimeString("es-CO")}
-                </p>
 
                 <div className="mt-10 overflow-hidden rounded-3xl border border-slate-700 bg-slate-900/70 shadow-2xl">
                     <table className="w-full text-lg md:text-2xl">
